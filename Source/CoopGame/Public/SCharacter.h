@@ -44,4 +44,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
+	// Begin APawn Interface
+
+	/** @return	Pawn's eye location */
+	// In our situation it returns the camera position
+	virtual FVector GetPawnViewLocation() const override;
+
+	//End APawn Interface
 };
