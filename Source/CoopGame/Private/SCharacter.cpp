@@ -5,6 +5,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "AI/Navigation/NavigationTypes.h"
+#include "SWeapon.h"
 
 
 // Sets default values
@@ -40,7 +41,18 @@ FVector ASCharacter::GetPawnViewLocation() const
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	DefaultFOV = CameraComponent->FieldOfView;
+
+	// Spawn current Weapon
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(StarterWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocketName);
+	}
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -65,10 +77,33 @@ void ASCharacter::EndCrouch()
 	UnCrouch();
 }
 
+void ASCharacter::BeginZoom()
+{
+	bWantsToZoom = true;
+}
+void ASCharacter::EndZoom()
+{
+	bWantsToZoom = false;
+}
+
+void ASCharacter::Fire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Fire();
+	}
+}
+
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	//Update the FOV depending if we are looking downsides or not
+	float TargetFOV = bWantsToZoom ? ZoomedFOV : DefaultFOV;
+	//Interp the zoom based on InterpSpeed
+	float NewFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, ZoomInterpSpeed);
+	CameraComponent->SetFieldOfView(NewFOV);
 }
 
 // Called to bind functionality to input
@@ -88,5 +123,13 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	//Add Jump
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+
+	//Zoom Action
+	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::BeginZoom);
+	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::EndZoom);
+
+	//Mouse Actions
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::Fire);
+
 }
 

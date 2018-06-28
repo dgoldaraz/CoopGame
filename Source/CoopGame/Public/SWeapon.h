@@ -20,19 +20,20 @@ public:
 	// Sets default values for this actor's properties
 	ASWeapon();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	virtual void Fire();
+
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,  Category = "Component")
 	USkeletalMeshComponent* MeshComponent = nullptr;
 
 	//Damage type
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 	TSubclassOf<UDamageType> DamageType;
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	virtual void Fire();
+	void PlayFireEffects(const FVector& TraceDirection, const FHitResult& Hit);
 
 	//Muzzle effect particle system when the weapon is fired
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
@@ -52,7 +53,6 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 	FName TracerStartName;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	TSubclassOf<UCameraShake> FireCamShake;
 };

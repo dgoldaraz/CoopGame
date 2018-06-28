@@ -8,6 +8,7 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class ASWeapon;
 
 UCLASS()
 class COOPGAME_API ASCharacter : public ACharacter
@@ -30,12 +31,36 @@ protected:
 
 	void EndCrouch();	
 
+	void BeginZoom();
+	void EndZoom();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	UCameraComponent* CameraComponent = nullptr;
 
 	//Spring arm help us to move the camera in a nicer way, avoid Wall break the camera view and more things like add Camera Lag
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	USpringArmComponent* SpringArmComponent = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+	float ZoomedFOV = 65.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player", meta = (ClampMin = 0.1, ClampMax = 100))
+	float ZoomInterpSpeed = 20.0f;
+
+	bool bWantsToZoom;
+
+	// FOV when we begin Play
+	float DefaultFOV;
+
+	ASWeapon* CurrentWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+	TSubclassOf<ASWeapon> StarterWeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+	FName WeaponAttachSocketName;
+	void Fire();
+
 
 public:	
 	// Called every frame
