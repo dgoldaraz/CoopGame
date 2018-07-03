@@ -58,6 +58,9 @@ protected:
 	UFUNCTION()
 	void FinishReload(class UAnimMontage*Montage, bool bInterrupted);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int GetBullets();
+
 	ASWeapon* CurrentWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
@@ -76,6 +79,7 @@ protected:
 
 	// FOV when we begin Play
 	float DefaultFOV;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

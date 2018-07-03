@@ -108,7 +108,7 @@ void ASCharacter::StopFire()
 
 void ASCharacter::Reload()
 {
-	if (CurrentWeapon && !bFiring /* && !bReloading*/)
+	if (CurrentWeapon && !bFiring  && !bReloading)
 	{
 		CurrentWeapon->Reload(); 
 		bCanFire = false;
@@ -128,6 +128,15 @@ void ASCharacter::FinishReload(class UAnimMontage*Montage, bool bInterrupted)
 	ReloadRequested = false;
 	bReloading = false;
 	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ASCharacter::FinishReload);
+}
+
+int ASCharacter::GetBullets()
+{
+	if (CurrentWeapon)
+	{
+		return CurrentWeapon->GetCurrentBullets();
+	}
+	return 0;
 }
 
 // Called every frame

@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	UAnimMontage* ReloadMontage;
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int GetCurrentBullets() { return CurrentNumBullets; }
+
 
 protected:
 
