@@ -34,6 +34,11 @@ protected:
 	void BeginZoom();
 	void EndZoom();
 
+	void StartFire();
+	void StopFire();
+
+	void Reload();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	UCameraComponent* CameraComponent = nullptr;
 
@@ -47,10 +52,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Player", meta = (ClampMin = 0.1, ClampMax = 100))
 	float ZoomInterpSpeed = 20.0f;
 
-	bool bWantsToZoom;
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	bool ReloadRequested = false;
 
-	// FOV when we begin Play
-	float DefaultFOV;
+	UFUNCTION()
+	void FinishReload(class UAnimMontage*Montage, bool bInterrupted);
 
 	ASWeapon* CurrentWeapon;
 
@@ -59,9 +65,17 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
 	FName WeaponAttachSocketName;
-	void Fire();
 
+	bool bFiring = false;
 
+	bool bCanFire = true;
+
+	bool bReloading = false;
+
+	bool bWantsToZoom;
+
+	// FOV when we begin Play
+	float DefaultFOV;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

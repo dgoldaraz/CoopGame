@@ -6,6 +6,7 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "AI/Navigation/NavigationTypes.h"
 #include "SWeapon.h"
+#include "Animation/AnimInstance.h"
 
 
 // Sets default values
@@ -81,17 +82,52 @@ void ASCharacter::BeginZoom()
 {
 	bWantsToZoom = true;
 }
+
 void ASCharacter::EndZoom()
 {
 	bWantsToZoom = false;
 }
 
-void ASCharacter::Fire()
+void ASCharacter::StartFire()
+{
+	if (CurrentWeapon && bCanFire)
+	{
+		CurrentWeapon->StartFire();
+		bFiring = true;
+	}
+}
+
+void ASCharacter::StopFire()
 {
 	if (CurrentWeapon)
 	{
-		CurrentWeapon->Fire();
+		CurrentWeapon->StopFire();
+		bFiring = false;
 	}
+}
+
+void ASCharacter::Reload()
+{
+	if (CurrentWeapon && !bFiring /* && !bReloading*/)
+	{
+		CurrentWeapon->Reload(); 
+		bCanFire = false;
+		ReloadRequested = true;
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			AnimInstance->OnMontageEnded.AddDynamic(this, &ASCharacter::FinishReload);
+			AnimInstance->Montage_Play(CurrentWeapon->ReloadMontage);
+			bReloading = true;
+		}
+	}
+}
+
+void ASCharacter::FinishReload(class UAnimMontage*Montage, bool bInterrupted)
+{
+	bCanFire = true;
+	ReloadRequested = false;
+	bReloading = false;
+	GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &ASCharacter::FinishReload);
 }
 
 // Called every frame
@@ -129,7 +165,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::EndZoom);
 
 	//Mouse Actions
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::Fire);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
 
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASCharacter::Reload);
 }
 

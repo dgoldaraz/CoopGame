@@ -6,9 +6,13 @@
 #include "Particles/ParticleSystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "CoopGame.h"
+#include "TimerManager.h"
 
 static int32 DebugWeaponDrawing = 0;
 FAutoConsoleVariableRef CVARDebugWeaponDrawing(TEXT("Coop.DebugWeapons"), DebugWeaponDrawing, TEXT("Draw Debug Lines for Weapons"), ECVF_Cheat);
+
 
 // Sets default values
 ASWeapon::ASWeapon()
@@ -20,6 +24,15 @@ ASWeapon::ASWeapon()
 	//Set socket name on code so it can change dynamically
 	MuzzleSocketName = "MuzzleSocket";
 	TracerStartName = "BeamEnd";
+}
+
+void ASWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TimeBetweenShots = 60.0f / RateOfFire;
+
+	CurrentNumBullets = BulletsLoader;
 }
 
 void ASWeapon::PlayFireEffects(const FVector& TraceDirection, const FHitResult& Hit)
@@ -53,7 +66,9 @@ void ASWeapon::PlayFireEffects(const FVector& TraceDirection, const FHitResult& 
 void ASWeapon::Fire()
 {
 	//Trace the world from Pawn eyes to crosshair location (center of screen)
-	if (AActor* Owner = GetOwner())
+	//Check if we have bullets
+	AActor* Owner = GetOwner();
+	if (Owner && CurrentNumBullets > 0)
 	{
 		//Get eye transform
 		FVector EyesLocation;
@@ -70,21 +85,50 @@ void ASWeapon::Fire()
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(Owner);
 		QueryParams.AddIgnoredActor(this);
+		QueryParams.bReturnPhysicalMaterial = true;
 		QueryParams.bTraceComplex = true;
 		
 		FHitResult Hit;
-		if (GetWorld()->LineTraceSingleByChannel(Hit, EyesLocation, TraceDirection, ECC_Visibility, QueryParams))
+		if (GetWorld()->LineTraceSingleByChannel(Hit, EyesLocation, TraceDirection, COLLISION_WEAPON, QueryParams))
 		{
 			//If there is a hit
 			//Process Damage
 			AActor* HitActor = Hit.GetActor();
-			UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDirection, Hit, Owner->GetInstigatorController(), this, DamageType);
+
+			// Get Surface type
+			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());
+
+			float ActualDamage = BaseDamage;
+			if (SurfaceType == SURFACE_FLESHVULNERABLE)
+			{
+				ActualDamage *= 4.0f;
+			}
+
+			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, Owner->GetInstigatorController(), this, DamageType);
+
+			UParticleSystem* SelectedEffect = nullptr;
+
+			switch (SurfaceType)
+			{
+				case SURFACE_FLESHDEFAULT:
+				case SURFACE_FLESHVULNERABLE:
+				{
+					SelectedEffect = FleshImpactEffect;
+					break;
+				}
+				default:
+				{
+					SelectedEffect = DefaultImpactEffect;
+					break;
+				}
+			}
 
 			//Spawn Particle effects on hit
-			if (ImpactEffect)
+			if (SelectedEffect)
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 			}
+
 		}
 
 		if (DebugWeaponDrawing > 0)
@@ -93,5 +137,25 @@ void ASWeapon::Fire()
 		}
 
 		PlayFireEffects(TraceDirection, Hit);
+
+		LastFireTime = GetWorld()->TimeSeconds;
+		CurrentNumBullets--;
 	}
+}
+
+void ASWeapon::StartFire()
+{
+	float FirstDelay = FMath::Max(LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds, 0.0f);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_TimeBetweenShots, this, &ASWeapon::Fire, TimeBetweenShots, true, FirstDelay);
+}
+
+void ASWeapon::StopFire()
+{
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimeBetweenShots);
+}
+
+void ASWeapon::Reload()
+{
+	CurrentNumBullets = BulletsLoader;
 }

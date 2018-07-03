@@ -10,6 +10,7 @@
 class USkeletalMeshComponent;
 class UDamageType;
 class UParticleSystem;
+class UAnimMontage;
 
 UCLASS()
 class COOPGAME_API ASWeapon : public AActor
@@ -20,11 +21,21 @@ public:
 	// Sets default values for this actor's properties
 	ASWeapon();
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	virtual void Fire();
+	void StartFire();
+
+	void StopFire();
+
+	void Reload();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UAnimMontage* ReloadMontage;
+
 
 protected:
 
+	virtual void BeginPlay() override;
+
+	virtual void Fire();
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,  Category = "Component")
 	USkeletalMeshComponent* MeshComponent = nullptr;
@@ -41,7 +52,11 @@ protected:
 
 	//Muzzle effect particle system when the weapon hit something
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-	UParticleSystem* ImpactEffect = nullptr;
+	UParticleSystem* DefaultImpactEffect = nullptr;
+
+	//Muzzle effect particle system when the weapon hit something on Flesh
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+	UParticleSystem* FleshImpactEffect = nullptr;
 
 	//Tracer effect particle from Muzzle point to hit point
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
@@ -55,4 +70,25 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	TSubclassOf<UCameraShake> FireCamShake;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float BaseDamage = 20.0f;
+
+	// RPM - Bullets per minute
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float RateOfFire = 600;
+
+	// Number of Bullets in each Loader
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float BulletsLoader = 60;
+
+
+	FTimerHandle TimerHandle_TimeBetweenShots;
+
+	float LastFireTime = 0.0f;
+
+	//Derive from RateOfFire
+	float TimeBetweenShots; 
+
+	int CurrentNumBullets = 0;
 };
