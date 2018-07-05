@@ -98,6 +98,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float IncrementDispersion = 0.001f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float MaxRecoil = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float MinRecoil = 0.0f;
 
 	FTimerHandle TimerHandle_TimeBetweenShots;
 

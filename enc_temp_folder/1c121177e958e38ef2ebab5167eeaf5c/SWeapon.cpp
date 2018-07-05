@@ -80,7 +80,7 @@ void ASWeapon::Fire()
 		//Apply some Recoil
 		if (APawn* OwnerPawn = Cast<APawn>(Owner))
 		{
-			OwnerPawn->AddControllerPitchInput(FMath::RandRange(MinRecoil, -MaxRecoil));
+			OwnerPawn->AddControllerPitchInput(FMath::RandRange(MinRecoil, MaxRecoil));
 		}
 
 		//Calculate direction (and trace end) multipliying by big number
