@@ -32,6 +32,8 @@ void ASWeapon::BeginPlay()
 
 	TimeBetweenShots = 60.0f / RateOfFire;
 
+	TimeToIncreaseDispersion = 60.0f / RateOfDispersion;
+
 	CurrentNumBullets = BulletsLoader;
 }
 
@@ -78,6 +80,7 @@ void ASWeapon::Fire()
 
 		//Calculate direction (and trace end) multipliying by big number
 		FVector ShotDirection = EyesRotation.Vector();
+		ApplyDispersion(ShotDirection);
 		FVector TraceDirection = EyesLocation + (ShotDirection * 10000);
 
 		//Collision query params
@@ -145,17 +148,46 @@ void ASWeapon::Fire()
 
 void ASWeapon::StartFire()
 {
+	if (!bFirstFire)
+	{
+		bFirstFire = true;
+		GetWorldTimerManager().SetTimer(TimerHandle_TimeIncreaseDispersion, this, &ASWeapon::IncreaseDispersion, TimeToIncreaseDispersion, true, 0.0f);
+	}
 	float FirstDelay = FMath::Max(LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds, 0.0f);
-
 	GetWorldTimerManager().SetTimer(TimerHandle_TimeBetweenShots, this, &ASWeapon::Fire, TimeBetweenShots, true, FirstDelay);
 }
 
 void ASWeapon::StopFire()
 {
 	GetWorldTimerManager().ClearTimer(TimerHandle_TimeBetweenShots);
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimeIncreaseDispersion);
+	bFirstFire = false;
+	CurrentDispersionRadius = 0.0f;
 }
 
 void ASWeapon::Reload()
 {
 	CurrentNumBullets = BulletsLoader;
+}
+
+void ASWeapon::ApplyDispersion(FVector& ShotDirection)
+{
+	//Apply a dispersion to the shotDirection based on time and radius
+	FVector Offset(FMath::RandRange(-CurrentDispersionRadius, CurrentDispersionRadius), 0.0f, FMath::RandRange(-CurrentDispersionRadius, CurrentDispersionRadius));
+	ShotDirection += Offset;
+}
+
+void ASWeapon::IncreaseDispersion()
+{
+	if (CurrentDispersionRadius < MaxDispersionRadius)
+	{
+		CurrentDispersionRadius += IncrementDispersion;
+		UE_LOG(LogTemp, Warning, TEXT("Dispersion %f "), CurrentDispersionRadius);
+		GetWorldTimerManager().SetTimer(TimerHandle_TimeIncreaseDispersion, this, &ASWeapon::IncreaseDispersion, TimeToIncreaseDispersion, true, 0.0f);
+	}
+	else
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_TimeIncreaseDispersion);
+	}
+	
 }

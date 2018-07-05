@@ -40,6 +40,10 @@ protected:
 
 	virtual void Fire();
 
+	virtual void ApplyDispersion(FVector& ShotDirection);
+
+	void IncreaseDispersion();
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,  Category = "Component")
 	USkeletalMeshComponent* MeshComponent = nullptr;
 
@@ -79,19 +83,36 @@ protected:
 
 	// RPM - Bullets per minute
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float RateOfFire = 600;
+	float RateOfFire = 600.0f;
 
 	// Number of Bullets in each Loader
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float BulletsLoader = 60;
+	float BulletsLoader = 60.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float MaxDispersionRadius = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float RateOfDispersion = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float IncrementDispersion = 0.001f;
 
 
 	FTimerHandle TimerHandle_TimeBetweenShots;
 
+	FTimerHandle TimerHandle_TimeIncreaseDispersion;
+
 	float LastFireTime = 0.0f;
 
 	//Derive from RateOfFire
-	float TimeBetweenShots; 
+	float TimeBetweenShots = 0.0f; 
 
 	int CurrentNumBullets = 0;
+
+	float CurrentDispersionRadius = 0.0f;
+
+	float TimeToIncreaseDispersion = 0.0f;
+
+	bool bFirstFire = false;
 };
